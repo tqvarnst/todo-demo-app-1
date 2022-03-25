@@ -26,3 +26,6 @@ ObjectStore
 *.ipr
 *.iws
 .idea
+
+.DS_Store
+.vscode

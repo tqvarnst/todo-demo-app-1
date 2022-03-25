@@ -38,14 +38,14 @@ spec:
         When set to `"true"`, skip verifying the TLS certs of the Central
         endpoint.  Defaults to `"false"`.
       default: "false"
-    - name: break_on_violations
+    - name: break_on_high_violations
       type: string
       description: |
         When set to `"true"`, the pipeline will fail in case of violations
       default: "true"
   results:
-    - name: check_output
-      description: Output of `roxctl image check`
+    - name: IMAGE_POLICY_SUMMARY
+      description: Build policy check summary
   steps:
     - name: rox-image-check
       image: docker.io/centos@sha256:a1801b843b1bfaf77c501e7a6d3f709401a1e0c83863037fa3aab063a7fdb9dc
@@ -62,13 +62,39 @@ spec:
               key: rox_central_endpoint
       script: |
         #!/usr/bin/env bash
-        set +x
+        set -x
         curl -s -k -L -H "Authorization: Bearer $ROX_API_TOKEN" \
           "https://$ROX_CENTRAL_ENDPOINT/api/cli/download/roxctl-linux" \
           --output ./roxctl  \
           > /dev/null
         chmod +x ./roxctl  > /dev/null
         ./roxctl image check \
-          $( [ "$(params.insecure-skip-tls-verify)" = "true" ] && \
-          echo -n "--insecure-skip-tls-verify") \
-          -e "$ROX_CENTRAL_ENDPOINT" --image "$(params.image)" || [[ "$(params.break_on_violations)" = "false" ]]
+          $( [ "$(params.insecure-skip-tls-verify)" = "true" ] && echo -n "--insecure-skip-tls-verify") \
+          -e "$ROX_CENTRAL_ENDPOINT" --image "$(params.image)" -o json > /data/result.json || true
+
+        cat /data/result.json
+      volumeMounts:
+      - name: data
+        mountPath: /data
+    - name: check-violations
+      image: quay.io/siamaksade/jq
+      script: |
+        #!/usr/bin/env bash
+        set -x
+
+        cat /data/result.json | jq '.summary' | tee /tekton/results/IMAGE_POLICY_SUMMARY
+        high_violations=$(cat /data/result.json | jq '.summary.HIGH')
+        critical_violations=$(cat /data/result.json | jq '.summary.CRITICAL')
+
+        if [[ "$(params.break_on_high_violations)" != "true" ]] || ([[ "$high_violations" = "0" ]] && [[ "$critical_violations" = "0" ]])
+        then
+          exit 0
+        else
+          exit 1
+        fi
+      volumeMounts:
+      - name: data
+        mountPath: /data
+  volumes:
+  - name: data
+    emptyDir: {}

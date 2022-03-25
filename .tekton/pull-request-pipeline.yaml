@@ -99,7 +99,7 @@ spec:
             value: $(params.IMAGE_NAME)
           - name: insecure-skip-tls-verify
             value: 'true'
-          - name: break_on_violations
+          - name: break_on_high_violations
             value: 'false'
         runAfter:
           - build

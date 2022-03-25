@@ -92,9 +92,9 @@ spec:
           name: acs-check-build
         params:
           - name: rox_central_endpoint
-            value: acs-ci-task
+            value: acs-task
           - name: rox_api_token
-            value: acs-ci-task
+            value: acs-task
           - name: image
             value: $(params.IMAGE_NAME)
           - name: insecure-skip-tls-verify

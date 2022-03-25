@@ -33,7 +33,7 @@ spec:
     - name: PATH_CONTEXT
       value: .
     - name: VERSION
-      value: openjdk-17-ubi8
+      value: openjdk-11-ubi8
   pipelineSpec:
     params:
       - name: APP_NAME
@@ -92,14 +92,14 @@ spec:
           name: acs-check-build
         params:
           - name: rox_central_endpoint
-            value: acs-ci-task
+            value: acs-task
           - name: rox_api_token
-            value: acs-ci-task
+            value: acs-task
           - name: image
             value: $(params.IMAGE_NAME)
           - name: insecure-skip-tls-verify
             value: 'true'
-          - name: break_on_violations
+          - name: break_on_high_violations
             value: 'false'
         runAfter:
           - build
